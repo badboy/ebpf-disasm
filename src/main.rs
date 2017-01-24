@@ -73,7 +73,7 @@ fn main() {
             print!(".code = 0x{:>02x}, ", insn[0]);
             print!(".dst_reg = 0x{:>x}, ", insn[1]&0x0f);
             print!(".src_reg = 0x{:>x}, ", insn[1]>>4);
-            let off = (insn[2] as u16)<<8 | (insn[3] as u16);
+            let off = (insn[3] as u16)<<8 | (insn[2] as u16);
             print!(".off = 0x{:>04x}, ", off);
             let imm = (insn[7] as u32)<<24 |
                 (insn[6] as u32)<<16 |
