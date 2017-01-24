@@ -20,10 +20,15 @@ fn main() {
              .help("Sets the input ELF file to use")
              .required(true)
              .index(1))
+        .arg(Arg::with_name("bytecode")
+            .short("b")
+            .long("bytecode")
+            .help("Only show raw bytecode"))
         .get_matches();
 
     let section = matches.value_of("section").unwrap_or(".classifier");
     let input_file = matches.value_of("INPUT").unwrap();
+    let show_bytecode = matches.is_present("bytecode");
 
     let file = match elf::File::open_path(&input_file) {
         Ok(f) => f,
@@ -44,7 +49,16 @@ fn main() {
 
     let prog = &text_scn.data;
 
-    for insn in rbpf::disassembler::to_insn_vec(prog) {
-        println!("{}", insn.desc.replace(" ", "\t"));
+    if show_bytecode {
+        for insn in prog.chunks(8) {
+            for i in insn {
+                print!("0x{:>02x}, ", i);
+            }
+            println!("");
+        }
+    } else {
+        for insn in rbpf::disassembler::to_insn_vec(prog) {
+            println!("{}", insn.desc.replace(" ", "\t"));
+        }
     }
 }
