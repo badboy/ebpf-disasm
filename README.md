@@ -21,7 +21,7 @@ ebpf-disasm --section .classifier bpf.o
 ### Example output
 
 ```
-$ ebpf-disasm -s filter filter.o
+$ ebpf-disasm -s .classifier bpf.o
 mov64	r6,	r1
 ldabsh	0x4
 mov64	r7,	r0
