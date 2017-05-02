@@ -38,6 +38,10 @@ fn main() {
             .short("l")
             .long("list")
             .help("List sections of the object file"))
+        .arg(Arg::with_name("number")
+            .short("n")
+            .long("number")
+            .help("Number all output lines"))
         .get_matches();
 
     let section = matches.value_of("section").unwrap_or(".classifier");
@@ -46,6 +50,7 @@ fn main() {
     let show_ccode = matches.is_present("ccode");
     let raw = matches.is_present("raw");
     let list_sections = matches.is_present("list-sections");
+    let number = matches.is_present("number");
 
     if show_bytecode && show_ccode {
         println!("Can't show both bytecode and C code.");
@@ -132,7 +137,10 @@ fn main() {
         }
         println!("}};");
     } else {
-        for insn in rbpf::disassembler::to_insn_vec(&prog) {
+        for (idx, insn) in rbpf::disassembler::to_insn_vec(&prog).iter().enumerate() {
+            if number {
+                print!("{:>6}  ", idx);
+            }
             println!("{}", insn.desc.replace(" ", "\t"));
         }
     }
