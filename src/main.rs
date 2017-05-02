@@ -4,6 +4,8 @@ extern crate rbpf;
 
 use std::process;
 use clap::{Arg, App};
+use std::fs::File;
+use std::io::Read;
 
 fn main() {
     let matches = App::new("ebpf-disasm")
@@ -28,36 +30,64 @@ fn main() {
             .short("c")
             .long("ccode")
             .help("Only show a C compatible bpf_insn array"))
+        .arg(Arg::with_name("raw")
+            .short("r")
+            .long("raw")
+            .help("Treat input as raw bytes"))
         .get_matches();
 
     let section = matches.value_of("section").unwrap_or(".classifier");
     let input_file = matches.value_of("INPUT").unwrap();
     let show_bytecode = matches.is_present("bytecode");
     let show_ccode = matches.is_present("ccode");
+    let raw = matches.is_present("raw");
 
     if show_bytecode && show_ccode {
         println!("Can't show both bytecode and C code.");
         process::exit(1);
     }
 
-    let file = match elf::File::open_path(&input_file) {
-        Ok(f) => f,
-        Err(e) => {
-            println!("Could not read elf file.");
-            println!("Error: {:?}", e);
-            process::exit(1);
-        }
-    };
+    let prog;
+    if raw {
+        let mut file = match File::open(&input_file) {
+            Ok(f) => f,
+            Err(e) => {
+                println!("Could not read file.");
+                println!("Error: {:?}", e);
+                process::exit(1);
+            }
+        };
 
-    let text_scn = match file.get_section(&section) {
-        Some(s) => s,
-        None => {
-            println!("Failed to lookup '{}' section.", section);
-            process::exit(1);
+        let mut buf = Vec::new();
+        match file.read_to_end(&mut buf) {
+            Ok(_) => {},
+            Err(e) => {
+                println!("Could not read file.");
+                println!("Error: {:?}", e);
+                process::exit(1);
+            }
         }
-    };
+        prog = buf;
+    } else {
+        let file = match elf::File::open_path(&input_file) {
+            Ok(f) => f,
+            Err(e) => {
+                println!("Could not read elf file.");
+                println!("Error: {:?}", e);
+                process::exit(1);
+            }
+        };
 
-    let prog = &text_scn.data;
+        let text_scn = match file.get_section(&section) {
+            Some(s) => s,
+            None => {
+                println!("Failed to lookup '{}' section.", section);
+                process::exit(1);
+            }
+        };
+
+        prog = text_scn.data.clone();
+    }
 
     if show_bytecode {
         for insn in prog.chunks(8) {
@@ -84,7 +114,7 @@ fn main() {
         }
         println!("}};");
     } else {
-        for insn in rbpf::disassembler::to_insn_vec(prog) {
+        for insn in rbpf::disassembler::to_insn_vec(&prog) {
             println!("{}", insn.desc.replace(" ", "\t"));
         }
     }
