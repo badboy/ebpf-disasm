@@ -1,6 +1,6 @@
 [root]
 name = "ebpf-disasm"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "clap 2.23.3 (registry+https://github.com/rust-lang/crates.io-index)",
  "elf 0.0.10 (registry+https://github.com/rust-lang/crates.io-index)",
