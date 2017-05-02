@@ -34,6 +34,10 @@ fn main() {
             .short("r")
             .long("raw")
             .help("Treat input as raw bytes"))
+        .arg(Arg::with_name("list-sections")
+            .short("l")
+            .long("list")
+            .help("List sections of the object file"))
         .get_matches();
 
     let section = matches.value_of("section").unwrap_or(".classifier");
@@ -41,9 +45,15 @@ fn main() {
     let show_bytecode = matches.is_present("bytecode");
     let show_ccode = matches.is_present("ccode");
     let raw = matches.is_present("raw");
+    let list_sections = matches.is_present("list-sections");
 
     if show_bytecode && show_ccode {
         println!("Can't show both bytecode and C code.");
+        process::exit(1);
+    }
+
+    if raw && list_sections {
+        println!("Can't list sections of raw bytecode.");
         process::exit(1);
     }
 
@@ -77,6 +87,14 @@ fn main() {
                 process::exit(1);
             }
         };
+
+        if list_sections {
+            println!("Sections of {}:", input_file);
+            for section in file.sections {
+                println!("  {}", section.shdr.name);
+            }
+            process::exit(0);
+        }
 
         let text_scn = match file.get_section(&section) {
             Some(s) => s,
