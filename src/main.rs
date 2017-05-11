@@ -139,7 +139,7 @@ fn main() {
     } else {
         for (idx, insn) in rbpf::disassembler::to_insn_vec(&prog).iter().enumerate() {
             if number {
-                print!("{:>6}  ", idx);
+                print!("{:>6}  ", idx+1);
             }
             println!("{}", insn.desc.replace(" ", "\t"));
         }
