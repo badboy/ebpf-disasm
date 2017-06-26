@@ -163,7 +163,7 @@ fn main() {
 //
 // Jumps are relative from the current instruction pointer
 fn is_jmp(insn: &rbpf::disassembler::HLInsn) -> bool {
-    (insn.opc & 0xf) == rbpf::ebpf::BPF_JMP &&
+    (insn.opc & 0x07) == rbpf::ebpf::BPF_JMP &&
         (insn.opc != rbpf::ebpf::CALL) &&
         (insn.opc != rbpf::ebpf::TAIL_CALL) &&
         (insn.opc != rbpf::ebpf::EXIT)
