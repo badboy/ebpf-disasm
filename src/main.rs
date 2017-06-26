@@ -137,11 +137,41 @@ fn main() {
         }
         println!("}};");
     } else {
-        for (idx, insn) in rbpf::disassembler::to_insn_vec(&prog).iter().enumerate() {
+        let mut idx = 0;
+        for insn in rbpf::disassembler::to_insn_vec(&prog) {
             if number {
-                print!("{:>6}  ", idx+1);
+                print!("{:>6}:  ", idx);
             }
-            println!("{}", insn.desc.replace(" ", "\t"));
+            print!("{}", insn.desc.replace(" ", "\t"));
+
+            if is_jmp(&insn) {
+                print!("\t(jump to {})", idx + insn.off as isize);
+            }
+
+            if is_wide_op(&insn) {
+                idx += 1;
+            }
+
+            println!();
+            idx += 1;
         }
     }
+}
+
+// Check if the instruction is a jump
+// (but not a call, tailcall or exit)
+//
+// Jumps are relative from the current instruction pointer
+fn is_jmp(insn: &rbpf::disassembler::HLInsn) -> bool {
+    (insn.opc & 0xf) == rbpf::ebpf::BPF_JMP &&
+        (insn.opc != rbpf::ebpf::CALL) &&
+        (insn.opc != rbpf::ebpf::TAIL_CALL) &&
+        (insn.opc != rbpf::ebpf::EXIT)
+}
+
+// Check if the instruction is spread across two instructions
+//
+// Currently only a wide load uses a second instruction for the u64 field.
+fn is_wide_op(insn: &rbpf::disassembler::HLInsn) -> bool {
+    insn.opc == rbpf::ebpf::LD_DW_IMM
 }
