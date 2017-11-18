@@ -22,10 +22,14 @@ fn main() {
              .help("Sets the input ELF file to use")
              .required(true)
              .index(1))
+        .arg(Arg::with_name("hex")
+            .short("h")
+            .long("hex")
+            .help("Dump bytecode in hex"))
         .arg(Arg::with_name("bytecode")
             .short("b")
             .long("bytecode")
-            .help("Only show raw bytecode"))
+            .help("Dump raw bytecode"))
         .arg(Arg::with_name("ccode")
             .short("c")
             .long("ccode")
@@ -46,14 +50,17 @@ fn main() {
 
     let section = matches.value_of("section").unwrap_or(".classifier");
     let input_file = matches.value_of("INPUT").unwrap();
+    let show_hex = matches.is_present("hex");
     let show_bytecode = matches.is_present("bytecode");
     let show_ccode = matches.is_present("ccode");
     let raw = matches.is_present("raw");
     let list_sections = matches.is_present("list-sections");
     let number = matches.is_present("number");
 
-    if show_bytecode && show_ccode {
-        println!("Can't show both bytecode and C code.");
+    let number_formats = show_hex as u8 + show_bytecode as u8 + show_ccode as u8;
+
+    if number_formats > 1 {
+        println!("Can't dump multiple bytecode formats.");
         process::exit(1);
     }
 
@@ -112,7 +119,7 @@ fn main() {
         prog = text_scn.data.clone();
     }
 
-    if show_bytecode {
+    if show_hex {
         for insn in prog.chunks(8) {
             for i in insn {
                 print!("0x{:>02x}, ", i);
@@ -136,6 +143,12 @@ fn main() {
             println!(" }},");
         }
         println!("}};");
+
+    } else if show_bytecode {
+        use std::io::{self, Write};
+        let stdout = io::stdout();
+        let mut handle = stdout.lock();
+        handle.write_all(&prog).expect("Can't dump bytecode to stdout");
     } else {
         let mut idx = 0;
         for insn in rbpf::disassembler::to_insn_vec(&prog) {
