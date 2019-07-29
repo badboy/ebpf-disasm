@@ -157,6 +157,10 @@ fn main() {
             }
             print!("{}", insn.desc.replace(" ", "\t"));
 
+            // PC is incremented after the instruction if fetched
+            // but before it's side effects are applied.
+            idx += 1;
+
             if is_jmp(&insn) {
                 print!("\t(jump to {})", idx + insn.off as isize);
             }
@@ -166,7 +170,6 @@ fn main() {
             }
 
             println!();
-            idx += 1;
         }
     }
 }
